@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ES添削AI</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --primary: #6c63ff;
+    --primary-light: #f0eeff;
+    --primary-mid: #ddd8ff;
+    --primary-dark: #5a52d5;
+    --green: #22c55e;
+    --orange: #f97316;
+    --red: #ef4444;
+    --bg: #f4f4f9;
+    --card: #ffffff;
+    --text: #16162a;
+    --muted: #9090a0;
+    --border: #eaeaef;
+    --shadow: 0 2px 16px rgba(108,99,255,0.08);
+    --shadow-lg: 0 8px 32px rgba(108,99,255,0.14);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', 'Hiragino Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    max-width: 430px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    position: relative;
+  }
+
+  .screen { display: none; flex-direction: column; min-height: 100dvh; }
+  .screen.active { display: flex; }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px 14px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 10;
+    border-bottom: 1px solid rgba(234,234,239,0.8);
+  }
+  .topbar-title { font-size: 1.05rem; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+  .topbar-back {
+    background: none; border: none; cursor: pointer;
+    color: var(--primary);
+    display: flex; align-items: center; gap: 2px;
+    font-size: 0.9rem; font-weight: 600;
+  }
+  .topbar-icon {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--primary-light);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; border: none;
+    box-shadow: 0 2px 8px rgba(108,99,255,0.15);
+    color: var(--primary);
+  }
+
+  .scroll-area { flex: 1; overflow-y: auto; padding-bottom: 88px; }
+
+  .hero {
+    background: linear-gradient(135deg, #6c63ff 0%, #8b83ff 60%, #a78bfa 100%);
+    margin: 14px 14px 0;
+    border-radius: 24px;
+    padding: 28px 24px;
+    position: relative; overflow: hidden;
+    box-shadow: 0 8px 28px rgba(108,99,255,0.38);
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: -30px; right: -30px;
+    width: 160px; height: 160px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+  }
+  .hero::after {
+    content: '';
+    position: absolute; bottom: -20px; left: 30px;
+    width: 80px; height: 80px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    font-size: 0.67rem; font-weight: 700;
+    padding: 3px 10px; border-radius: 100px;
+    margin-bottom: 10px; letter-spacing: 0.3px;
+  }
+  .hero-text h2 { font-size: 1.3rem; font-weight: 900; line-height: 1.3; color: #fff; margin-bottom: 8px; letter-spacing: -0.3px; }
+  .hero-text p { font-size: 0.78rem; color: rgba(255,255,255,0.82); line-height: 1.5; }
+
+  .section-label {
+    font-size: 0.75rem; font-weight: 800; color: var(--muted);
+    letter-spacing: 0.8px; text-transform: uppercase;
+    padding: 0 18px; margin-bottom: 10px; margin-top: 22px;
+  }
+
+  .start-btn {
+    display: flex; align-items: center; gap: 14px;
+    background: linear-gradient(135deg, #6c63ff, #8b83ff);
+    border: none; border-radius: 18px;
+    padding: 18px 20px;
+    margin: 0 14px;
+    cursor: pointer; width: calc(100% - 28px);
+    text-align: left;
+    box-shadow: 0 6px 24px rgba(108,99,255,0.38);
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative; overflow: hidden;
+  }
+  .start-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+  }
+  .start-btn:active { transform: scale(0.98); }
+  .start-btn-icon {
+    width: 44px; height: 44px; background: rgba(255,255,255,0.2);
+    border-radius: 13px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: #fff;
+  }
+  .start-btn-text h3 { font-size: 0.95rem; font-weight: 800; color: #fff; margin-bottom: 3px; }
+  .start-btn-text p { font-size: 0.73rem; color: rgba(255,255,255,0.78); line-height: 1.4; }
+  .start-btn-arrow { margin-left: auto; color: rgba(255,255,255,0.7); font-size: 1.1rem; }
+
+  .feature-list { padding: 0 14px; display: flex; flex-direction: column; gap: 6px; }
+  .feature-item {
+    display: flex; align-items: center; gap: 14px;
+    background: #fff; border-radius: 16px;
+    padding: 15px 16px; cursor: pointer;
+    border: none; width: 100%; text-align: left;
+    box-shadow: var(--shadow);
+    transition: transform 0.15s;
+  }
+  .feature-item:active { transform: scale(0.98); }
+  .feature-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .feature-icon.purple { background: var(--primary-light); color: var(--primary); }
+  .feature-icon.blue { background: #e0f0ff; color: #3b82f6; }
+  .feature-icon.green { background: #e0faf0; color: #16a34a; }
+  .feature-icon.orange { background: #fff0e0; color: var(--orange); }
+  .feature-text h4 { font-size: 0.88rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .feature-text p { font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
+  .feature-arrow { margin-left: auto; color: var(--muted); font-size: 0.85rem; font-weight: 600; }
+
+  .input-section { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+  .form-group-card {
+    background: #fff; border-radius: 16px;
+    padding: 16px; box-shadow: var(--shadow);
+  }
+  .form-label { font-size: 0.75rem; font-weight: 700; color: var(--muted); margin-bottom: 8px; display: block; letter-spacing: 0.3px; }
+  .form-input, .form-select {
+    width: 100%; border: 1.5px solid var(--border);
+    border-radius: 11px; padding: 11px 13px;
+    font-size: 0.88rem; font-family: inherit; color: var(--text);
+    outline: none; background: var(--bg); transition: border-color 0.2s, background 0.2s;
+    appearance: none;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--primary); background: #fff; }
+  .form-input::placeholder { color: #c7c7cc; }
+  .form-textarea {
+    width: 100%; border: 1.5px solid var(--border);
+    border-radius: 11px; padding: 13px 14px;
+    font-size: 0.88rem; font-family: inherit; color: var(--text);
+    outline: none; background: var(--bg); transition: border-color 0.2s, background 0.2s;
+    resize: none; height: 200px; line-height: 1.75;
+    caret-color: var(--primary);
+  }
+  .form-textarea:focus { border-color: var(--primary); background: #fff; }
+  .form-textarea::placeholder { color: #c7c7cc; }
+  .char-row { display: flex; justify-content: flex-end; margin-top: 6px; }
+  .char-count { font-size: 0.7rem; color: var(--muted); }
+  .char-count.over { color: var(--red); font-weight: 600; }
+
+  .hint-box {
+    background: var(--primary-light); border-radius: 14px;
+    padding: 14px 16px; font-size: 0.82rem; color: var(--primary);
+    line-height: 1.6; display: flex; align-items: flex-start; gap: 10px;
+  }
+  .hint-box svg { flex-shrink: 0; margin-top: 1px; }
+
+  .cta-btn {
+    width: 100%; background: linear-gradient(135deg, #6c63ff, #8b83ff);
+    border: none; border-radius: 14px; color: #fff;
+    font-size: 0.95rem; font-weight: 800; padding: 16px;
+    cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+    box-shadow: 0 6px 20px rgba(108,99,255,0.35);
+    letter-spacing: 0.2px;
+  }
+  .cta-btn:active:not(:disabled) { transform: scale(0.98); opacity: 0.9; }
+  .cta-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .tab-bar {
+    display: flex; border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(12px);
+    position: sticky; top: 57px; z-index: 9;
+    overflow-x: auto; scrollbar-width: none;
+    padding: 0 4px;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex: 1; min-width: 72px; padding: 13px 8px;
+    border: none; background: none; cursor: pointer;
+    font-size: 0.75rem; font-weight: 700; color: var(--muted);
+    border-bottom: 2.5px solid transparent; white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .tab-content { display: none; padding: 14px; }
+  .tab-content.active { display: block; }
+
+  .score-circle-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    background: #fff; border-radius: 20px; padding: 28px 20px 20px;
+    margin-bottom: 12px; box-shadow: var(--shadow);
+  }
+  .score-circle { position: relative; width: 136px; height: 136px; margin-bottom: 18px; }
+  .score-circle svg { width: 136px; height: 136px; transform: rotate(-90deg); }
+  .score-circle-bg { fill: none; stroke: #eeeef5; stroke-width: 10; }
+  .score-circle-fill { fill: none; stroke: url(#grad); stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1); }
+  .score-inner {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .score-num { font-size: 2.1rem; font-weight: 900; color: var(--text); line-height: 1; letter-spacing: -1px; }
+  .score-denom { font-size: 0.68rem; color: var(--muted); margin-top: 3px; }
+
+  .grade-chip { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .grade-chip .grade-letter { font-size: 1.7rem; font-weight: 900; color: var(--primary); letter-spacing: -1px; }
+  .grade-chip .grade-label { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
+  .grade-row { display: flex; gap: 24px; align-items: center; justify-content: center; margin-bottom: 6px; }
+
+  .pass-card { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
+  .pass-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .pass-title { font-size: 0.88rem; font-weight: 700; }
+  .pass-badge { font-size: 0.7rem; font-weight: 800; padding: 3px 11px; border-radius: 100px; }
+  .pass-badge.high { background: #e0faf0; color: #16a34a; }
+  .pass-badge.mid { background: #fff8e0; color: #b45309; }
+  .pass-badge.low { background: #fee2e2; color: #dc2626; }
+  .pass-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 10px; }
+  .pass-bar-bg { height: 7px; background: #eeeef5; border-radius: 100px; overflow: hidden; }
+  .pass-bar { height: 100%; background: linear-gradient(90deg, var(--primary), #a78bfa); border-radius: 100px; transition: width 1.2s cubic-bezier(.4,0,.2,1); }
+  .pass-pct { font-size: 0.78rem; font-weight: 700; color: var(--primary); text-align: right; margin-top: 5px; }
+
+  .strengths-card { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
+  .card-head { font-size: 0.85rem; font-weight: 800; margin-bottom: 12px; color: var(--text); }
+  .strength-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 0.85rem; color: #3a3a4a; padding: 7px 0;
+    line-height: 1.5; border-bottom: 1px solid var(--border);
+  }
+  .strength-item:last-child { border-bottom: none; }
+  .check-circle {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #e0faf0; color: #16a34a;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+
+  .points-card { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
+  .point-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 11px 0; border-bottom: 1px solid var(--border);
+    font-size: 0.85rem; line-height: 1.5;
+  }
+  .point-row:last-child { border-bottom: none; }
+  .point-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--primary-light); color: var(--primary);
+    font-size: 0.7rem; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .point-text { flex: 1; color: #3a3a4a; }
+  .priority-badge { font-size: 0.67rem; font-weight: 800; padding: 2px 9px; border-radius: 100px; flex-shrink: 0; }
+  .priority-badge.high { background: #fee2e2; color: var(--red); }
+  .priority-badge.mid { background: #fff8e0; color: #b45309; }
+  .priority-badge.low { background: #e0faf0; color: #16a34a; }
+
+  .question-block { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
+  .q-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
+  .q-title { font-size: 0.88rem; font-weight: 700; line-height: 1.4; }
+  .q-comment { font-size: 0.83rem; color: #3a3a4a; line-height: 1.7; margin-bottom: 12px; }
+  .ai-proposal { background: var(--primary-light); border-radius: 12px; padding: 13px 14px; border: 1px solid var(--primary-mid); }
+  .ai-label {
+    display: inline-block; background: var(--primary); color: #fff;
+    font-size: 0.63rem; font-weight: 800; padding: 2px 9px;
+    border-radius: 100px; margin-bottom: 8px; letter-spacing: 0.3px;
+  }
+  .ai-text { font-size: 0.83rem; color: var(--text); line-height: 1.7; }
+
+  .revised-card { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
+  .revised-text {
+    font-size: 0.86rem; color: #3a3a4a; line-height: 1.9;
+    white-space: pre-wrap;
+    background: var(--bg); border-radius: 11px;
+    padding: 14px 15px; border: 1px solid var(--border);
+  }
+  .copy-btn {
+    width: 100%; background: linear-gradient(135deg, #6c63ff, #8b83ff); border: none;
+    border-radius: 12px; color: #fff; font-size: 0.9rem; font-weight: 800;
+    padding: 14px; cursor: pointer; margin-top: 12px;
+    box-shadow: 0 4px 14px rgba(108,99,255,0.3);
+    transition: opacity 0.2s, transform 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .copy-btn:active { opacity: 0.9; transform: scale(0.98); }
+
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(234,234,239,0.8);
+    display: flex; z-index: 20;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 3px; padding: 10px 4px 8px;
+    border: none; background: none; cursor: pointer; color: var(--muted);
+    font-size: 0.6rem; font-weight: 700; transition: color 0.2s;
+    letter-spacing: 0.2px;
+  }
+  .nav-item.active { color: var(--primary); }
+  .nav-icon { display: flex; align-items: center; justify-content: center; width: 24px; height: 22px; }
+
+  .loading { text-align: center; padding: 48px 0; }
+  .spinner {
+    width: 34px; height: 34px;
+    border: 3px solid var(--primary-mid);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 14px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p { font-size: 0.82rem; color: var(--muted); font-weight: 500; }
+
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(22,22,42,0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+    backdrop-filter: blur(12px);
+  }
+  .modal {
+    background: #fff; border-radius: 24px;
+    padding: 30px 24px; max-width: 380px; width: 100%;
+    box-shadow: 0 24px 64px rgba(108,99,255,0.18);
+  }
+  .modal h2 { font-size: 1rem; font-weight: 800; margin-bottom: 6px; }
+  .modal p { color: var(--muted); font-size: 0.8rem; line-height: 1.65; margin-bottom: 16px; }
+  .modal input {
+    width: 100%; border: 1.5px solid var(--border);
+    border-radius: 11px; padding: 11px 13px;
+    font-size: 0.82rem; outline: none; margin-bottom: 10px;
+    font-family: monospace; transition: border-color 0.2s; background: var(--bg);
+  }
+  .modal input:focus { border-color: var(--primary); background: #fff; }
+  .modal-save {
+    width: 100%; background: linear-gradient(135deg, #6c63ff, #8b83ff); border: none;
+    border-radius: 11px; padding: 13px; color: #fff;
+    font-size: 0.9rem; font-weight: 800; cursor: pointer;
+    box-shadow: 0 4px 16px rgba(108,99,255,0.3);
+  }
+  .modal-warn { color: var(--muted); font-size: 0.7rem; margin-top: 8px; text-align: center; }
+
+  .history-item {
+    background: #fff; border-radius: 16px; padding: 14px 16px;
+    margin-bottom: 8px; cursor: pointer;
+    border: none; width: 100%; text-align: left;
+    box-shadow: var(--shadow); transition: transform 0.15s;
+  }
+  .history-item:active { transform: scale(0.98); }
+  .history-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .history-company { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+  .history-grade { font-size: 0.8rem; font-weight: 800; color: var(--primary); background: var(--primary-light); padding: 2px 9px; border-radius: 100px; }
+  .history-type { font-size: 0.75rem; color: var(--muted); }
+  .history-date { font-size: 0.7rem; color: #c7c7cc; margin-top: 3px; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 0.85rem; line-height: 1.7; }
+  .empty-icon {
+    width: 52px; height: 52px; background: var(--primary-light); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px; color: var(--primary);
+  }
+</style>
+</head>
+<body>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>APIキーを入力</h2>
+    <p>Claude APIキーを入力してください。ブラウザにのみ保存されます。<br>取得先: <strong>console.anthropic.com</strong></p>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
+    <button class="modal-save" onclick="saveKey()">保存して始める</button>
+    <p class="modal-warn">キーは他人に見せないでください</p>
+  </div>
+</div>
+
+<!-- ══════════ HOME ══════════ -->
+<div class="screen active" id="screen-home">
+  <div class="topbar">
+    <span class="topbar-title">ES添削AI</span>
+    <button class="topbar-icon" onclick="showModal()">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </button>
+  </div>
+  <div class="scroll-area">
+    <div class="hero">
+      <div class="hero-text">
+        <div class="hero-badge">AI添削 · プロ視点でESを徹底分析</div>
+        <h2>あなたの強みが、<br>もっと伝わるESへ。</h2>
+        <p>通過率を上げるESを一緒に作りましょう。</p>
+      </div>
+    </div>
+
+    <div class="section-label">添削を始める</div>
+    <div style="padding: 0 14px;">
+      <button class="start-btn" onclick="goToInput()">
+        <div class="start-btn-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="start-btn-text">
+          <h3>ESを新しく添削する</h3>
+          <p>ESを入力してAIが添削します</p>
+        </div>
+        <span class="start-btn-arrow">›</span>
+      </button>
+    </div>
+
+    <div class="section-label" style="margin-top:24px">機能一覧</div>
+    <div class="feature-list">
+      <button class="feature-item" onclick="goToHistory()">
+        <div class="feature-icon purple">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="feature-text">
+          <h4>添削履歴</h4>
+          <p>過去に添削したESを確認できます</p>
+        </div>
+        <span class="feature-arrow">›</span>
+      </button>
+      <button class="feature-item" onclick="goTo('interview')">
+        <div class="feature-icon blue">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="feature-text">
+          <h4>面接質問を予測</h4>
+          <p>あなたのESから面接で聞かれそうな質問を生成します</p>
+        </div>
+        <span class="feature-arrow">›</span>
+      </button>
+      <button class="feature-item" onclick="goTo('selfanalysis')">
+        <div class="feature-icon green">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="feature-text">
+          <h4>自己分析サポート</h4>
+          <p>強みやガクチカを整理するお手伝いをします</p>
+        </div>
+        <span class="feature-arrow">›</span>
+      </button>
+      <button class="feature-item" onclick="goTo('appeal')">
+        <div class="feature-icon orange">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M2 22h20"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>
+        </div>
+        <div class="feature-text">
+          <h4>企業別アピール提案</h4>
+          <p>志望企業に合わせたアピールポイントを提案します</p>
+        </div>
+        <span class="feature-arrow">›</span>
+      </button>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-item active">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+      ホーム
+    </button>
+    <button class="nav-item" onclick="goToHistory()">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+      添削履歴
+    </button>
+    <button class="nav-item" onclick="goTo('interview')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+      面接質問
+    </button>
+    <button class="nav-item" onclick="goTo('selfanalysis')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+      自己分析
+    </button>
+    <button class="nav-item" onclick="goTo('appeal')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M2 22h20"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h6"/></svg></span>
+      企業別提案
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ 面接質問予測 ══════════ -->
+<div class="screen" id="screen-interview">
+  <div class="topbar">
+    <button class="topbar-back" onclick="goTo('home')">‹ 戻る</button>
+    <span class="topbar-title">面接質問を予測</span>
+    <div style="width:60px"></div>
+  </div>
+  <div class="scroll-area">
+    <div class="input-section">
+      <div class="hint-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        ESを入力すると、面接で聞かれやすい質問を予測します
+      </div>
+      <div>
+        <label class="form-label">ESの本文</label>
+        <textarea class="form-textarea" id="interview-input" maxlength="800" placeholder="添削したESを貼り付けてください..."></textarea>
+      </div>
+      <button class="cta-btn" id="interview-btn" onclick="submitInterview()">質問を予測する</button>
+      <div id="interview-result"></div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('home')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+      ホーム
+    </button>
+    <button class="nav-item" onclick="goToHistory()">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+      添削履歴
+    </button>
+    <button class="nav-item active">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+      面接質問
+    </button>
+    <button class="nav-item" onclick="goTo('selfanalysis')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+      自己分析
+    </button>
+    <button class="nav-item" onclick="goTo('appeal')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M2 22h20"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h6"/></svg></span>
+      企業別提案
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ 自己分析 ══════════ -->
+<div class="screen" id="screen-selfanalysis">
+  <div class="topbar">
+    <button class="topbar-back" onclick="goTo('home')">‹ 戻る</button>
+    <span class="topbar-title">自己分析サポート</span>
+    <div style="width:60px"></div>
+  </div>
+  <div class="scroll-area">
+    <div class="input-section">
+      <div class="hint-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        あなたの経験・強みを入力すると、就活向けに整理します
+      </div>
+      <div>
+        <label class="form-label">学生時代に頑張ったこと・経験</label>
+        <textarea class="form-textarea" id="sa-experience" maxlength="400" placeholder="例: サークルでリーダーを務め、メンバーをまとめた。バイトで売上を20%上げた。など" style="height:120px"></textarea>
+      </div>
+      <div>
+        <label class="form-label">自分の強みだと思うこと</label>
+        <textarea class="form-textarea" id="sa-strength" maxlength="300" placeholder="例: 粘り強さ、コミュニケーション力、分析力 など" style="height:100px"></textarea>
+      </div>
+      <div>
+        <label class="form-label">苦手なこと・弱み（任意）</label>
+        <textarea class="form-textarea" id="sa-weakness" maxlength="200" placeholder="例: 慎重すぎて決断が遅い など" style="height:90px"></textarea>
+      </div>
+      <button class="cta-btn" id="sa-btn" onclick="submitSelfAnalysis()">分析する</button>
+      <div id="sa-result"></div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('home')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+      ホーム
+    </button>
+    <button class="nav-item" onclick="goToHistory()">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+      添削履歴
+    </button>
+    <button class="nav-item" onclick="goTo('interview')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+      面接質問
+    </button>
+    <button class="nav-item active">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+      自己分析
+    </button>
+    <button class="nav-item" onclick="goTo('appeal')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M2 22h20"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h6"/></svg></span>
+      企業別提案
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ 企業別アピール提案 ══════════ -->
+<div class="screen" id="screen-appeal">
+  <div class="topbar">
+    <button class="topbar-back" onclick="goTo('home')">‹ 戻る</button>
+    <span class="topbar-title">企業別アピール提案</span>
+    <div style="width:60px"></div>
+  </div>
+  <div class="scroll-area">
+    <div class="input-section">
+      <div class="hint-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        志望企業・業種に合わせたアピール方法を提案します
+      </div>
+      <div>
+        <label class="form-label">企業名（任意）</label>
+        <input class="form-input" id="appeal-company" type="text" placeholder="例: 株式会社〇〇">
+      </div>
+      <div>
+        <label class="form-label">業種</label>
+        <select class="form-select" id="appeal-industry">
+          <option value="">選択してください</option>
+          <option value="IT・通信">IT・通信</option>
+          <option value="メーカー・製造">メーカー・製造</option>
+          <option value="金融・保険">金融・保険</option>
+          <option value="商社">商社</option>
+          <option value="小売・流通">小売・流通</option>
+          <option value="コンサルティング">コンサルティング</option>
+          <option value="広告・メディア">広告・メディア</option>
+          <option value="不動産・建設">不動産・建設</option>
+          <option value="医療・福祉">医療・福祉</option>
+          <option value="教育">教育</option>
+          <option value="公務員・非営利">公務員・非営利</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">あなたの強み・経験（簡単に）</label>
+        <textarea class="form-textarea" id="appeal-strength" maxlength="400" placeholder="例: サークルでリーダー経験あり。粘り強さが強み。英語が得意。など" style="height:120px"></textarea>
+      </div>
+      <button class="cta-btn" id="appeal-btn" onclick="submitAppeal()">アピール方法を提案する</button>
+      <div id="appeal-result"></div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('home')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+      ホーム
+    </button>
+    <button class="nav-item" onclick="goToHistory()">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+      添削履歴
+    </button>
+    <button class="nav-item" onclick="goTo('interview')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+      面接質問
+    </button>
+    <button class="nav-item" onclick="goTo('selfanalysis')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+      自己分析
+    </button>
+    <button class="nav-item active">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M2 22h20"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h6"/></svg></span>
+      企業別提案
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ INPUT ══════════ -->
+<div class="screen" id="screen-input">
+  <div class="topbar">
+    <button class="topbar-back" onclick="goTo('home')">‹ 戻る</button>
+    <span class="topbar-title">ES入力</span>
+    <div style="width:60px"></div>
+  </div>
+  <div class="scroll-area">
+    <div class="input-section">
+      <div class="form-group-card">
+        <label class="form-label">企業名（任意）</label>
+        <input class="form-input" id="company" type="text" placeholder="例: 株式会社〇〇">
+        <label class="form-label" style="margin-top:12px">業種</label>
+        <select class="form-select" id="industry">
+          <option value="">選択してください</option>
+          <option value="IT・通信">IT・通信</option>
+          <option value="メーカー・製造">メーカー・製造</option>
+          <option value="金融・保険">金融・保険</option>
+          <option value="商社">商社</option>
+          <option value="小売・流通">小売・流通</option>
+          <option value="コンサルティング">コンサルティング</option>
+          <option value="広告・メディア">広告・メディア</option>
+          <option value="不動産・建設">不動産・建設</option>
+          <option value="医療・福祉">医療・福祉</option>
+          <option value="教育">教育</option>
+          <option value="公務員・非営利">公務員・非営利</option>
+          <option value="その他">その他</option>
+        </select>
+        <label class="form-label" style="margin-top:12px">設問の種類</label>
+        <select class="form-select" id="es-type">
+          <option value="自己PR">自己PR</option>
+          <option value="志望動機">志望動機</option>
+          <option value="学生時代に力を入れたこと（ガクチカ）">ガクチカ</option>
+          <option value="長所・短所">長所・短所</option>
+          <option value="自由記述">自由記述</option>
+        </select>
+      </div>
+      <div class="form-group-card">
+        <label class="form-label">ESの本文</label>
+        <textarea class="form-textarea" id="es-input" maxlength="800"
+          placeholder="ここにESの文章を貼り付けてください..."
+          oninput="updateCount()"></textarea>
+        <div class="char-row">
+          <span class="char-count" id="char-count">0 / 800</span>
+        </div>
+      </div>
+      <button class="cta-btn" id="submit-btn" onclick="submitES()">添削する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ RESULT ══════════ -->
+<div class="screen" id="screen-result">
+  <div class="topbar">
+    <button class="topbar-back" onclick="goTo('input')">‹ 戻る</button>
+    <span class="topbar-title">添削結果</span>
+    <div style="width:60px"></div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('overall')">総合評価</button>
+    <button class="tab-btn" onclick="switchTab('scores')">項目別評価</button>
+    <button class="tab-btn" onclick="switchTab('comments')">添削コメント</button>
+    <button class="tab-btn" onclick="switchTab('revised')">改善例</button>
+  </div>
+  <div class="scroll-area" style="padding-bottom:20px">
+
+    <div class="tab-content active" id="tab-overall">
+      <div class="score-circle-wrap">
+        <div class="grade-row">
+          <div class="score-circle">
+            <svg viewBox="0 0 130 130">
+              <defs>
+                <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:#6c63ff"/>
+                  <stop offset="100%" style="stop-color:#a78bfa"/>
+                </linearGradient>
+              </defs>
+              <circle class="score-circle-bg" cx="65" cy="65" r="55"/>
+              <circle class="score-circle-fill" id="score-arc" cx="65" cy="65" r="55"
+                stroke-dasharray="345.4" stroke-dashoffset="345.4"/>
+            </svg>
+            <div class="score-inner">
+              <div class="score-num" id="score-num">--</div>
+              <div class="score-denom">/100</div>
+            </div>
+          </div>
+          <div class="grade-chip">
+            <div class="grade-letter" id="grade-letter">-</div>
+            <div class="grade-label">評価ランク</div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-top:4px" id="grade-msg-text"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="pass-area" style="padding:0 16px">
+        <div class="pass-card" id="pass-card" style="display:none">
+          <div class="pass-top">
+            <span class="pass-title">通過率予測</span>
+            <span class="pass-badge" id="pass-badge">高</span>
+          </div>
+          <div class="pass-sub" id="pass-sub">このESの通過率は高いと予測されます</div>
+          <div class="pass-bar-bg"><div class="pass-bar" id="pass-bar" style="width:0%"></div></div>
+          <div class="pass-pct" id="pass-pct"></div>
+        </div>
+
+        <div class="strengths-card" id="strengths-card" style="display:none">
+          <div class="card-head">強み</div>
+          <div id="strengths-list"></div>
+        </div>
+
+        <div class="points-card" id="points-card-overall" style="display:none">
+          <div class="card-head">改善ポイント（優先度順）</div>
+          <div id="points-list-overall"></div>
+        </div>
+
+        <button class="cta-btn" style="margin:0 0 16px" onclick="switchTab('revised')">改善例を見る →</button>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-scores" style="padding:16px">
+      <div id="scores-content">
+        <div class="loading"><div class="spinner"></div><p>読み込み中...</p></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-comments" style="padding:16px">
+      <div id="comments-content">
+        <div class="loading"><div class="spinner"></div><p>読み込み中...</p></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-revised" style="padding:16px">
+      <div id="revised-content">
+        <div class="loading"><div class="spinner"></div><p>読み込み中...</p></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════ HISTORY ══════════ -->
+<div class="screen" id="screen-history">
+  <div class="topbar">
+    <button class="topbar-back" onclick="goTo('home')">‹ 戻る</button>
+    <span class="topbar-title">添削履歴</span>
+    <div style="width:60px"></div>
+  </div>
+  <div class="scroll-area" style="padding:16px">
+    <div id="history-list"></div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goTo('home')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+      ホーム
+    </button>
+    <button class="nav-item active">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+      添削履歴
+    </button>
+    <button class="nav-item" onclick="goTo('interview')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+      面接質問
+    </button>
+    <button class="nav-item" onclick="goTo('selfanalysis')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+      自己分析
+    </button>
+    <button class="nav-item" onclick="goTo('appeal')">
+      <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M2 22h20"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h6"/></svg></span>
+      企業別提案
+    </button>
+  </div>
+</div>
+
+<script>
+let apiKey = localStorage.getItem('claude_api_key') || '';
+let lastRevised = '';
+let history = JSON.parse(localStorage.getItem('es_history') || '[]');
+
+if (apiKey) document.getElementById('modal').style.display = 'none';
+
+function saveKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val.startsWith('sk-ant-')) { alert('APIキーの形式が正しくありません'); return; }
+  localStorage.setItem('claude_api_key', val);
+  apiKey = val;
+  document.getElementById('modal').style.display = 'none';
+}
+function showModal() {
+  document.getElementById('api-key-input').value = apiKey;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function goTo(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + screen).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function goToInput() { goTo('input'); }
+function goToHistory() { renderHistory(); goTo('history'); }
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    const tabs = ['overall','scores','comments','revised'];
+    b.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function updateCount() {
+  const len = document.getElementById('es-input').value.length;
+  const el = document.getElementById('char-count');
+  el.textContent = `${len} / 800`;
+  el.className = 'char-count' + (len >= 800 ? ' over' : '');
+}
+
+function gradeToScore(g) {
+  const map = {'A+':97,'A':93,'A-':90,'B+':87,'B':83,'B-':80,'C+':77,'C':73,'C-':70,'D':55};
+  return map[g] || 70;
+}
+function gradeMsg(g) {
+  if (g.includes('A')) return 'この調子で仕上げましょう。';
+  if (g.includes('B')) return '良い内容です。少し磨きましょう。';
+  if (g.includes('C')) return '改善の余地があります。';
+  return 'かなりの改善が必要です。';
+}
+function passInfo(score) {
+  if (score >= 85) return { label:'高', cls:'high', sub:'このESの通過率は高いと予測されます', pct:'80%以上' };
+  if (score >= 70) return { label:'中', cls:'mid', sub:'改善することで通過率が上がります', pct:'50〜80%' };
+  return { label:'低', cls:'low', sub:'大幅な改善が必要です', pct:'50%未満' };
+}
+function priorityCls(p) {
+  if (!p) return 'mid';
+  if (p === '高' || p === 'high') return 'high';
+  if (p === '低' || p === 'low') return 'low';
+  return 'mid';
+}
+
+async function submitES() {
+  if (!apiKey) { showModal(); return; }
+  const text = document.getElementById('es-input').value.trim();
+  const company = document.getElementById('company').value.trim();
+  const industry = document.getElementById('industry').value;
+  const esType = document.getElementById('es-type').value;
+  if (!text || text.length < 20) return alert('ESの本文を入力してください');
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = '添削中...';
+
+  goTo('result');
+  switchTab('overall');
+  document.getElementById('score-num').textContent = '--';
+  document.getElementById('grade-letter').textContent = '-';
+  document.getElementById('grade-msg-text').textContent = '';
+  document.getElementById('score-arc').style.strokeDashoffset = '345.4';
+  ['pass-card','strengths-card','points-card-overall'].forEach(id =>
+    document.getElementById(id).style.display = 'none'
+  );
+  ['scores-content','comments-content','revised-content'].forEach(id =>
+    document.getElementById(id).innerHTML = '<div class="loading"><div class="spinner"></div><p>AIが添削しています...</p></div>'
+  );
+
+  const companyStr = company || '不明';
+  const prompt = `あなたは就活のプロのESアドバイザーです。以下のエントリーシートを徹底的に添削してください。必ず下記のJSON形式のみで返してください。
+
+企業名: ${companyStr}
+業種: ${industry || '不明'}
+設問種別: ${esType}
+ES本文:
+${text}
+
+返答形式（JSONのみ）:
+{
+  "grade": "B+",
+  "scores": [
+    { "label": "具体性", "score": 70 },
+    { "label": "論理性", "score": 80 },
+    { "label": "熱意・人柄", "score": 65 },
+    { "label": "企業への適合性", "score": 75 }
+  ],
+  "strengths": ["強み1", "強み2", "強み3"],
+  "points": [
+    { "text": "改善ポイント1", "priority": "高" },
+    { "text": "改善ポイント2", "priority": "中" },
+    { "text": "改善ポイント3", "priority": "低" }
+  ],
+  "comments": [
+    { "question": "${esType}", "comment": "詳細なコメント", "proposal": "改善した文章の冒頭部分..." }
+  ],
+  "revised": "改善後のES全文"
+}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || res.status);
+
+    const raw = data.content[0].text.trim();
+    let p;
+    try { const m = raw.match(/\{[\s\S]*\}/); p = JSON.parse(m ? m[0] : raw); }
+    catch { throw new Error('解析エラー。もう一度試してください。'); }
+
+    lastRevised = p.revised || '';
+    const score = gradeToScore(p.grade || 'C');
+    const pass = passInfo(score);
+
+    document.getElementById('score-num').textContent = score;
+    document.getElementById('grade-letter').textContent = p.grade || '-';
+    document.getElementById('grade-msg-text').textContent = gradeMsg(p.grade || 'C');
+    setTimeout(() => {
+      const offset = 345.4 * (1 - score / 100);
+      document.getElementById('score-arc').style.strokeDashoffset = offset;
+    }, 100);
+
+    const pc = document.getElementById('pass-card');
+    pc.style.display = 'block';
+    document.getElementById('pass-badge').textContent = pass.label;
+    document.getElementById('pass-badge').className = 'pass-badge ' + pass.cls;
+    document.getElementById('pass-sub').textContent = pass.sub;
+    document.getElementById('pass-pct').textContent = pass.pct;
+    setTimeout(() => {
+      document.getElementById('pass-bar').style.width = (score > 85 ? 85 : score) + '%';
+    }, 200);
+
+    if (p.strengths?.length) {
+      document.getElementById('strengths-card').style.display = 'block';
+      document.getElementById('strengths-list').innerHTML = p.strengths.map(s =>
+        `<div class="strength-item"><div class="check-circle"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span>${esc(s)}</span></div>`
+      ).join('');
+    }
+
+    if (p.points?.length) {
+      document.getElementById('points-card-overall').style.display = 'block';
+      document.getElementById('points-list-overall').innerHTML = p.points.map((pt, i) =>
+        `<div class="point-row">
+          <div class="point-num">${i+1}</div>
+          <div class="point-text">${esc(pt.text || pt)}</div>
+          <span class="priority-badge ${priorityCls(pt.priority)}">${pt.priority || '中'}</span>
+        </div>`
+      ).join('');
+    }
+
+    const scoresHtml = (p.scores || []).map(s => `
+      <div style="background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 8px rgba(0,0,0,0.05)">
+        <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:600;margin-bottom:8px">
+          <span>${esc(s.label)}</span><span style="color:var(--primary)">${s.score}点</span>
+        </div>
+        <div style="height:8px;background:#ececf1;border-radius:100px;overflow:hidden">
+          <div style="height:100%;background:linear-gradient(90deg,var(--primary),#a78bfa);border-radius:100px;width:${s.score}%;transition:width 1.2s ease"></div>
+        </div>
+      </div>
+    `).join('');
+    document.getElementById('scores-content').innerHTML = scoresHtml;
+
+    const commentsHtml = (p.comments || []).map(c => `
+      <div class="question-block">
+        <div class="q-head">
+          <span class="q-title">設問：${esc(c.question)}</span>
+          <span class="pass-badge high" style="font-size:0.68rem">詳細</span>
+        </div>
+        <div class="q-comment">${esc(c.comment)}</div>
+        ${c.proposal ? `<div class="ai-proposal">
+          <div class="ai-label">AI提案例</div>
+          <div class="ai-text">${esc(c.proposal)}</div>
+        </div>` : ''}
+      </div>
+    `).join('');
+    document.getElementById('comments-content').innerHTML = commentsHtml || '<p style="color:var(--muted);font-size:0.85rem">コメントなし</p>';
+
+    document.getElementById('revised-content').innerHTML = `
+      <div class="revised-card">
+        <div class="card-head">改善後のES</div>
+        <div class="revised-text">${esc(p.revised || '')}</div>
+        <button class="copy-btn" onclick="copyRevised()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          コピーする
+        </button>
+      </div>
+    `;
+
+    history.unshift({
+      id: Date.now(),
+      company: companyStr === '不明' ? '企業名未入力' : companyStr,
+      esType, grade: p.grade || '-',
+      date: new Date().toLocaleDateString('ja-JP'),
+      text: text.slice(0, 60) + '...'
+    });
+    if (history.length > 20) history = history.slice(0, 20);
+    localStorage.setItem('es_history', JSON.stringify(history));
+
+  } catch (e) {
+    document.getElementById('score-num').textContent = 'ERR';
+    document.getElementById('grade-letter').textContent = '!';
+    document.getElementById('grade-msg-text').textContent = e.message;
+    ['scores-content','comments-content','revised-content'].forEach(id =>
+      document.getElementById(id).innerHTML = `<p style="color:var(--red);font-size:0.85rem">${esc(e.message)}</p>`
+    );
+  } finally {
+    btn.disabled = false; btn.textContent = '添削する';
+  }
+}
+
+function copyRevised() {
+  if (!lastRevised) return;
+  navigator.clipboard.writeText(lastRevised).then(() => alert('コピーしました！'));
+}
+
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  if (!history.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </div>
+      <p>まだ添削履歴がありません。<br>ESを添削してみましょう！</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = history.map(h => `
+    <div class="history-item">
+      <div class="history-top">
+        <span class="history-company">${esc(h.company)}</span>
+        <span class="history-grade">${esc(h.grade)}</span>
+      </div>
+      <div class="history-type">${esc(h.esType)}</div>
+      <div class="history-date">${esc(h.date)}</div>
+    </div>
+  `).join('');
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+async function submitInterview() {
+  if (!apiKey) { showModal(); return; }
+  const text = document.getElementById('interview-input').value.trim();
+  if (!text || text.length < 20) return alert('ESの本文を入力してください');
+
+  const btn = document.getElementById('interview-btn');
+  btn.disabled = true; btn.textContent = '生成中...';
+  const result = document.getElementById('interview-result');
+  result.innerHTML = `<div class="loading"><div class="spinner"></div><p>面接質問を予測しています...</p></div>`;
+
+  const prompt = `以下のESから、面接で聞かれそうな質問を予測してください。JSON形式のみで返してください。
+
+ES:
+${text}
+
+返答形式:
+{
+  "questions": [
+    { "question": "質問文", "point": "この質問で確認したいポイント", "level": "高" },
+    { "question": "質問文", "point": "ポイント", "level": "中" }
+  ]
+}
+
+questionsは6〜8個。levelは「高」「中」「低」（聞かれやすさ）。`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-calls': 'true' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] }),
+    });
+    const data = await res.json();
+    const m = data.content[0].text.match(/\{[\s\S]*\}/);
+    const p = JSON.parse(m[0]);
+    const levelColor = { '高': 'var(--red)', '中': 'var(--orange)', '低': 'var(--green)' };
+    result.innerHTML = p.questions.map((q, i) => `
+      <div style="background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 8px rgba(0,0,0,0.05)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
+          <div style="font-size:0.88rem;font-weight:700;color:var(--text);line-height:1.4">Q${i+1}. ${esc(q.question)}</div>
+          <span style="font-size:0.68rem;font-weight:700;color:${levelColor[q.level]||'var(--muted)'};background:rgba(0,0,0,0.05);padding:2px 8px;border-radius:100px;flex-shrink:0">${esc(q.level)}</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--muted);line-height:1.5">${esc(q.point)}</div>
+      </div>
+    `).join('');
+  } catch(e) {
+    result.innerHTML = `<p style="color:var(--red);font-size:0.85rem">エラー: ${esc(e.message)}</p>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '質問を予測する';
+  }
+}
+
+async function submitSelfAnalysis() {
+  if (!apiKey) { showModal(); return; }
+  const experience = document.getElementById('sa-experience').value.trim();
+  const strength = document.getElementById('sa-strength').value.trim();
+  const weakness = document.getElementById('sa-weakness').value.trim();
+  if (!experience || !strength) return alert('経験と強みを入力してください');
+
+  const btn = document.getElementById('sa-btn');
+  btn.disabled = true; btn.textContent = '分析中...';
+  const result = document.getElementById('sa-result');
+  result.innerHTML = `<div class="loading"><div class="spinner"></div><p>自己分析をまとめています...</p></div>`;
+
+  const prompt = `以下の情報をもとに、就活向けの自己分析をまとめてください。JSON形式のみで返してください。
+
+学生時代の経験: ${experience}
+自分の強み: ${strength}
+苦手なこと・弱み: ${weakness || 'なし'}
+
+返答形式:
+{
+  "keywords": ["キーワード1", "キーワード2", "キーワード3"],
+  "strength_summary": "強みの要約（2〜3文）",
+  "gakuchika_hint": "ガクチカで使えるエピソードの切り口",
+  "caution": "面接で注意すべき点"
+}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-calls': 'true' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 800, messages: [{ role: 'user', content: prompt }] }),
+    });
+    const data = await res.json();
+    const m = data.content[0].text.match(/\{[\s\S]*\}/);
+    const p = JSON.parse(m[0]);
+    const kwHtml = (p.keywords||[]).map(k => `<span style="background:var(--primary-light);color:var(--primary);font-size:0.78rem;font-weight:600;padding:4px 12px;border-radius:100px">${esc(k)}</span>`).join('');
+    result.innerHTML = `
+      <div style="background:#fff;border-radius:14px;padding:18px;margin-bottom:10px;box-shadow:0 1px 8px rgba(0,0,0,0.05)">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:10px">あなたのキーワード</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">${kwHtml}</div>
+      </div>
+      <div style="background:#fff;border-radius:14px;padding:18px;margin-bottom:10px;box-shadow:0 1px 8px rgba(0,0,0,0.05)">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:8px">強みのまとめ</div>
+        <div style="font-size:0.88rem;color:var(--text);line-height:1.7">${esc(p.strength_summary||'')}</div>
+      </div>
+      <div style="background:#fff;border-radius:14px;padding:18px;margin-bottom:10px;box-shadow:0 1px 8px rgba(0,0,0,0.05)">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:8px">ガクチカの切り口</div>
+        <div style="font-size:0.88rem;color:var(--text);line-height:1.7">${esc(p.gakuchika_hint||'')}</div>
+      </div>
+      <div style="background:#fff;border-radius:14px;padding:18px;box-shadow:0 1px 8px rgba(0,0,0,0.05)">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--orange);margin-bottom:8px">面接での注意点</div>
+        <div style="font-size:0.88rem;color:var(--text);line-height:1.7">${esc(p.caution||'')}</div>
+      </div>`;
+  } catch(e) {
+    result.innerHTML = `<p style="color:var(--red);font-size:0.85rem">エラー: ${esc(e.message)}</p>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '分析する';
+  }
+}
+
+async function submitAppeal() {
+  if (!apiKey) { showModal(); return; }
+  const company = document.getElementById('appeal-company').value.trim();
+  const industry = document.getElementById('appeal-industry').value;
+  const myStrength = document.getElementById('appeal-strength').value.trim();
+  if (!industry || !myStrength) return alert('業種と強みを入力してください');
+
+  const btn = document.getElementById('appeal-btn');
+  btn.disabled = true; btn.textContent = '提案中...';
+  const result = document.getElementById('appeal-result');
+  result.innerHTML = `<div class="loading"><div class="spinner"></div><p>アピール方法を考えています...</p></div>`;
+
+  const prompt = `就活生のアピール方法を提案してください。JSON形式のみで返してください。
+
+企業名: ${company || '不明'}
+業種: ${industry}
+学生の強み・経験: ${myStrength}
+
+返答形式:
+{
+  "match_score": 75,
+  "appeal_points": [
+    { "title": "アピールポイント名", "description": "具体的な伝え方" }
+  ],
+  "keywords": ["業界キーワード1", "業界キーワード2", "業界キーワード3"],
+  "advice": "この企業・業種に向けた一言アドバイス"
+}
+
+appeal_pointsは3〜4個。match_scoreは0〜100の整数。`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-calls': 'true' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 900, messages: [{ role: 'user', content: prompt }] }),
+    });
+    const data = await res.json();
+    const m = data.content[0].text.match(/\{[\s\S]*\}/);
+    const p = JSON.parse(m[0]);
+    const score = Math.min(100, Math.max(0, parseInt(p.match_score)||50));
+    const kwHtml = (p.keywords||[]).map(k => `<span style="background:#fff;border:1px solid var(--border);color:var(--text);font-size:0.75rem;font-weight:600;padding:3px 10px;border-radius:100px">${esc(k)}</span>`).join('');
+    const pointsHtml = (p.appeal_points||[]).map((ap, i) => `
+      <div style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:8px;border-left:3px solid var(--primary)">
+        <div style="font-size:0.85rem;font-weight:700;color:var(--text);margin-bottom:4px">${i+1}. ${esc(ap.title)}</div>
+        <div style="font-size:0.8rem;color:var(--muted);line-height:1.6">${esc(ap.description)}</div>
+      </div>`).join('');
+    result.innerHTML = `
+      <div style="background:#fff;border-radius:14px;padding:18px;margin-bottom:10px;box-shadow:0 1px 8px rgba(0,0,0,0.05)">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:10px">企業マッチ度</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="font-size:1.8rem;font-weight:800;color:var(--primary)">${score}</div>
+          <div style="flex:1">
+            <div style="height:6px;background:var(--border);border-radius:100px;overflow:hidden">
+              <div style="width:${score}%;height:100%;background:linear-gradient(90deg,var(--primary),#818cf8);border-radius:100px"></div>
+            </div>
+          </div>
+          <div style="font-size:0.75rem;color:var(--muted)">/ 100</div>
+        </div>
+      </div>
+      <div style="background:var(--bg);border-radius:14px;padding:16px;margin-bottom:10px">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:10px">業界キーワード</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">${kwHtml}</div>
+      </div>
+      <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:8px">アピールポイント</div>
+      ${pointsHtml}
+      <div style="background:#fff;border-radius:14px;padding:16px;margin-top:4px;box-shadow:0 1px 8px rgba(0,0,0,0.05)">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--primary);margin-bottom:6px">アドバイス</div>
+        <div style="font-size:0.85rem;color:var(--text);line-height:1.7">${esc(p.advice||'')}</div>
+      </div>`;
+  } catch(e) {
+    result.innerHTML = `<p style="color:var(--red);font-size:0.85rem">エラー: ${esc(e.message)}</p>`;
+  } finally {
+    btn.disabled = false; btn.textContent = 'アピール方法を提案する';
+  }
+}
+</script>
+</body>
+</html>
