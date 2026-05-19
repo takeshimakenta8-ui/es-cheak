@@ -399,24 +399,12 @@
 </head>
 <body>
 
-<!-- Modal -->
-<div class="modal-overlay" id="modal">
-  <div class="modal">
-    <h2>APIキーを入力</h2>
-    <p>Claude APIキーを入力してください。ブラウザにのみ保存されます。<br>取得先: <strong>console.anthropic.com</strong></p>
-    <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
-    <button class="modal-save" onclick="saveKey()">保存して始める</button>
-    <p class="modal-warn">キーは他人に見せないでください</p>
-  </div>
-</div>
 
 <!-- ══════════ HOME ══════════ -->
 <div class="screen active" id="screen-home">
   <div class="topbar">
     <span class="topbar-title">ES添削AI</span>
-    <button class="topbar-icon" onclick="showModal()">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    </button>
+    <div style="width:34px"></div>
   </div>
   <div class="scroll-area">
     <div class="hero">
@@ -849,22 +837,18 @@
 </div>
 
 <script>
-let apiKey = localStorage.getItem('claude_api_key') || '';
 let lastRevised = '';
 let history = JSON.parse(localStorage.getItem('es_history') || '[]');
 
-if (apiKey) document.getElementById('modal').style.display = 'none';
-
-function saveKey() {
-  const val = document.getElementById('api-key-input').value.trim();
-  if (!val.startsWith('sk-ant-')) { alert('APIキーの形式が正しくありません'); return; }
-  localStorage.setItem('claude_api_key', val);
-  apiKey = val;
-  document.getElementById('modal').style.display = 'none';
-}
-function showModal() {
-  document.getElementById('api-key-input').value = apiKey;
-  document.getElementById('modal').style.display = 'flex';
+async function callClaude(messages, model, max_tokens) {
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages, model, max_tokens }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || res.status);
+  return data;
 }
 
 function goTo(screen) {
@@ -914,7 +898,6 @@ function priorityCls(p) {
 }
 
 async function submitES() {
-  if (!apiKey) { showModal(); return; }
   const text = document.getElementById('es-input').value.trim();
   const company = document.getElementById('company').value.trim();
   const industry = document.getElementById('industry').value;
@@ -968,23 +951,11 @@ ${text}
 }`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-calls': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2000,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error?.message || res.status);
+    const data = await callClaude(
+      [{ role: 'user', content: prompt }],
+      'claude-haiku-4-5-20251001',
+      2000
+    );
 
     const raw = data.content[0].text.trim();
     let p;
@@ -1124,7 +1095,6 @@ function esc(s) {
 }
 
 async function submitInterview() {
-  if (!apiKey) { showModal(); return; }
   const text = document.getElementById('interview-input').value.trim();
   if (!text || text.length < 20) return alert('ESの本文を入力してください');
 
@@ -1149,12 +1119,7 @@ ${text}
 questionsは6〜8個。levelは「高」「中」「低」（聞かれやすさ）。`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-calls': 'true' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] }),
-    });
-    const data = await res.json();
+    const data = await callClaude([{ role: 'user', content: prompt }], 'claude-haiku-4-5-20251001', 1200);
     const m = data.content[0].text.match(/\{[\s\S]*\}/);
     const p = JSON.parse(m[0]);
     const levelColor = { '高': 'var(--red)', '中': 'var(--orange)', '低': 'var(--green)' };
@@ -1175,7 +1140,6 @@ questionsは6〜8個。levelは「高」「中」「低」（聞かれやすさ�
 }
 
 async function submitSelfAnalysis() {
-  if (!apiKey) { showModal(); return; }
   const experience = document.getElementById('sa-experience').value.trim();
   const strength = document.getElementById('sa-strength').value.trim();
   const weakness = document.getElementById('sa-weakness').value.trim();
@@ -1201,12 +1165,7 @@ async function submitSelfAnalysis() {
 }`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-calls': 'true' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 800, messages: [{ role: 'user', content: prompt }] }),
-    });
-    const data = await res.json();
+    const data = await callClaude([{ role: 'user', content: prompt }], 'claude-haiku-4-5-20251001', 800);
     const m = data.content[0].text.match(/\{[\s\S]*\}/);
     const p = JSON.parse(m[0]);
     const kwHtml = (p.keywords||[]).map(k => `<span style="background:var(--primary-light);color:var(--primary);font-size:0.78rem;font-weight:600;padding:4px 12px;border-radius:100px">${esc(k)}</span>`).join('');
@@ -1235,7 +1194,6 @@ async function submitSelfAnalysis() {
 }
 
 async function submitAppeal() {
-  if (!apiKey) { showModal(); return; }
   const company = document.getElementById('appeal-company').value.trim();
   const industry = document.getElementById('appeal-industry').value;
   const myStrength = document.getElementById('appeal-strength').value.trim();
@@ -1265,12 +1223,7 @@ async function submitAppeal() {
 appeal_pointsは3〜4個。match_scoreは0〜100の整数。`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-calls': 'true' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 900, messages: [{ role: 'user', content: prompt }] }),
-    });
-    const data = await res.json();
+    const data = await callClaude([{ role: 'user', content: prompt }], 'claude-haiku-4-5-20251001', 900);
     const m = data.content[0].text.match(/\{[\s\S]*\}/);
     const p = JSON.parse(m[0]);
     const score = Math.min(100, Math.max(0, parseInt(p.match_score)||50));
