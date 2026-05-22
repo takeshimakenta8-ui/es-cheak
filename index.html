@@ -1069,19 +1069,79 @@ function closeUpgradeModal() {
 function handleOverlayClick(e) {
   if (e.target.id === 'upgrade-modal') closeUpgradeModal();
 }
-function goToPremiumPayment() {
-  alert('決済ページを準備中です。\nes-cheak.premium@gmail.com までお問い合わせください。');
+async function goToPremiumPayment() {
+  const btn = document.querySelector('#upgrade-modal .cta-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '決済ページへ移動中...'; }
+  try {
+    const res = await fetch('/api/create-checkout', { method: 'POST' });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert('エラーが発生しました。もう一度お試しください。');
+      if (btn) { btn.disabled = false; btn.textContent = 'プレミアムに申し込む →'; }
+    }
+  } catch (e) {
+    alert('エラーが発生しました。もう一度お試しください。');
+    if (btn) { btn.disabled = false; btn.textContent = 'プレミアムに申し込む →'; }
+  }
 }
+
+async function verifyPremiumByEmail(email) {
+  try {
+    const res = await fetch(`/api/verify-premium?email=${encodeURIComponent(email)}`);
+    const data = await res.json();
+    if (data.premium) {
+      localStorage.setItem('es_premium', '1');
+      localStorage.setItem('es_premium_email', email.toLowerCase());
+      closeUpgradeModal();
+      updateUsageBadge();
+      alert('プレミアムプランを有効化しました！');
+    } else {
+      alert('このメールアドレスに有効なサブスクリプションが見つかりませんでした。');
+    }
+  } catch (e) {
+    alert('確認中にエラーが発生しました。');
+  }
+}
+
 function enterPremiumCode() {
-  const code = prompt('プレミアムコードを入力してください:');
-  if (!code) return;
-  if (code.trim().toUpperCase() === 'ESPRO480') {
-    localStorage.setItem('es_premium', '1');
-    closeUpgradeModal();
-    updateUsageBadge();
-    alert('プレミアムプランを有効化しました！');
-  } else {
-    alert('コードが無効です。');
+  const email = prompt('お支払い時のメールアドレスを入力してください:');
+  if (!email) return;
+  verifyPremiumByEmail(email);
+}
+
+async function checkPremiumOnLoad() {
+  const params = new URLSearchParams(window.location.search);
+  // 決済完了後のリダイレクト
+  if (params.get('premium') === 'success' && params.get('session_id')) {
+    try {
+      const res = await fetch(`/api/verify-premium?session_id=${params.get('session_id')}`);
+      const data = await res.json();
+      if (data.premium) {
+        localStorage.setItem('es_premium', '1');
+        if (data.email) localStorage.setItem('es_premium_email', data.email);
+        updateUsageBadge();
+        alert('プレミアムプランへようこそ！🎉\n全機能が無制限でご利用いただけます。');
+        window.history.replaceState({}, '', '/');
+      }
+    } catch (e) {}
+  }
+  // 既存プレミアムユーザーの再確認（週1回）
+  const email = localStorage.getItem('es_premium_email');
+  const lastCheck = parseInt(localStorage.getItem('es_premium_last_check') || '0');
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  if (email && Date.now() - lastCheck > weekMs) {
+    try {
+      const res = await fetch(`/api/verify-premium?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      localStorage.setItem('es_premium_last_check', Date.now());
+      if (!data.premium) {
+        localStorage.removeItem('es_premium');
+        localStorage.removeItem('es_premium_email');
+        updateUsageBadge();
+      }
+    } catch (e) {}
   }
 }
 function scrollToPricing() {
@@ -1533,6 +1593,7 @@ appeal_pointsは3〜4個。match_scoreは0〜100の整数。`;
 
 // ===== 起動時初期化 =====
 updateUsageBadge();
+checkPremiumOnLoad();
 </script>
 </body>
 </html>
