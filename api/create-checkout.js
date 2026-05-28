@@ -1,6 +1,6 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-const BASE_URL = const BASE_URL = process.env.BASE_URL || 'https://es-check.ytech-lab.com';
+const BASE_URL = process.env.BASE_URL || 'https://es-check.ytech-lab.com';
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
